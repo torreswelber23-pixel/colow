@@ -8,14 +8,16 @@ import '../config/app_colors.dart';
 import '../config/app_constants.dart';
 
 class PushService {
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  FirebaseMessaging? _messaging;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
   Future<String?> init() async {
     await Firebase.initializeApp();
 
-    await _messaging.requestPermission(
+    _messaging = FirebaseMessaging.instance;
+
+    await _messaging!.requestPermission(
       alert: true,
       badge: true,
       sound: true,
@@ -27,7 +29,7 @@ class PushService {
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
     FirebaseMessaging.onBackgroundMessage(_handleBackgroundMessage);
 
-    final token = await _messaging.getToken();
+    final token = await _messaging!.getToken();
     return token;
   }
 
@@ -157,7 +159,7 @@ class PushService {
   }
 
   Future<void> subscribeToTopic(String topic) async {
-    await _messaging.subscribeToTopic(topic);
+    await _messaging?.subscribeToTopic(topic);
   }
 }
 
