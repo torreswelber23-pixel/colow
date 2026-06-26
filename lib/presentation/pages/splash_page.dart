@@ -22,28 +22,44 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _init() async {
-    final onboardingCubit = context.read<OnboardingCubit>();
-    await onboardingCubit.checkOnboarding();
-    
-    if (!mounted) return;
-    
-    if (!onboardingCubit.state.isOnboarded) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const OnboardingPage()),
-      );
-      return;
-    }
+    try {
+      final onboardingCubit = context.read<OnboardingCubit>();
+      await onboardingCubit.checkOnboarding();
 
-    final authCubit = context.read<AuthCubit>();
-    await authCubit.checkAuth();
-    
-    if (!mounted) return;
-    
-    if (authCubit.state.status == AuthStatus.authenticated) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomePage()),
+      if (!mounted) return;
+
+      if (!onboardingCubit.state.isOnboarded) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const OnboardingPage()),
+        );
+        return;
+      }
+
+      final authCubit = context.read<AuthCubit>();
+      
+      // Timeout de 5 segundos para evitar ficar preso para sempre
+      await authCubit.checkAuth().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('[COLOW] checkAuth timeout — indo para Login');
+        },
       );
-    } else {
+
+      if (!mounted) return;
+
+      if (authCubit.state.status == AuthStatus.authenticated) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+        );
+      }
+    } catch (e) {
+      debugPrint('[COLOW] Erro na SplashPage: $e');
+      if (!mounted) return;
+      // Em caso de qualquer erro, vai para o Login
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const LoginPage()),
       );

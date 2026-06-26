@@ -18,13 +18,22 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  await dotenv.load(fileName: '.env');
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (e) {
+    debugPrint('[COLOW] Erro ao carregar .env: $e');
+  }
+
   await Hive.initFlutter();
 
-  await Supabase.initialize(
-    url: Env.supabaseUrl,
-    anonKey: Env.supabaseAnonKey,
-  );
+  try {
+    await Supabase.initialize(
+      url: Env.supabaseUrl,
+      anonKey: Env.supabaseAnonKey,
+    );
+  } catch (e) {
+    debugPrint('[COLOW] Erro ao inicializar Supabase: $e');
+  }
 
   await initDependencies();
 
