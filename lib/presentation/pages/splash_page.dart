@@ -22,56 +22,56 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _init() async {
-    await context.read<OnboardingCubit>().checkOnboarding();
+    final onboardingCubit = context.read<OnboardingCubit>();
+    await onboardingCubit.checkOnboarding();
+    
+    if (!mounted) return;
+    
+    if (!onboardingCubit.state.isOnboarded) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const OnboardingPage()),
+      );
+      return;
+    }
+
+    final authCubit = context.read<AuthCubit>();
+    await authCubit.checkAuth();
+    
+    if (!mounted) return;
+    
+    if (authCubit.state.status == AuthStatus.authenticated) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<OnboardingCubit, OnboardingState>(
-      listener: (context, onboardingState) {
-        if (!onboardingState.isOnboarded) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const OnboardingPage()),
-          );
-          return;
-        }
-
-        context.read<AuthCubit>().checkAuth();
-      },
-      child: BlocListener<AuthCubit, AuthState>(
-        listener: (context, authState) {
-          if (authState.status == AuthStatus.authenticated) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const HomePage()),
-            );
-          } else if (authState.status == AuthStatus.unauthenticated) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const LoginPage()),
-            );
-          }
-        },
-        child: Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/images/logo-colow.png',
-                  width: 120,
-                  height: 120,
-                  errorBuilder: (_, __, ___) => const Icon(
-                    Icons.shield,
-                    size: 80,
-                    color: Color(0xFF2563EB),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(Color(0xFF2563EB)),
-                ),
-              ],
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/images/logo-colow.png',
+              width: 120,
+              height: 120,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.shield,
+                size: 80,
+                color: Color(0xFF2563EB),
+              ),
             ),
-          ),
+            const SizedBox(height: 24),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation(Color(0xFF2563EB)),
+            ),
+          ],
         ),
       ),
     );
