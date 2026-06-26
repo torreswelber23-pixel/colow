@@ -25,6 +25,12 @@ jobs:
         with:
           channel: 'stable'
 
+      - name: Generate .env
+        run: |
+          echo "SUPABASE_URL=https://rhveqvlldliccalfsuea.supabase.co" >> .env
+          echo "SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJodmVxdmxsZGxpY2NhbGZzdWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjg5MjMsImV4cCI6MjA5NjcwNDkyM30.NrsH1optDK2IbOl8YUqBwUZaidvEk72lvrA4SEHPrVY" >> .env
+          echo "LIVEKIT_URL=wss://welber-s7yegwse.livekit.cloud" >> .env
+
       - name: Get dependencies
         run: flutter pub get
 
