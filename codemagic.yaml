@@ -1,0 +1,115 @@
+# Codemagic CI/CD para COLOW Flutter
+# Documentacao: https://docs.codemagic.io/yaml/yaml-overview/
+
+workflows:
+  # --------------------------------------------------------------------------
+  # BUILD ANDROID (APK + App Bundle)
+  # --------------------------------------------------------------------------
+  android-build:
+    name: Build Android
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: latest
+      groups:
+        # Configure esses grupos no dashboard do Codemagic:
+        # Environment Variables -> Add group
+        - colow_env          # SUPABASE_URL, SUPABASE_ANON_KEY, MAPBOX_TOKEN, LIVEKIT_URL
+        - colow_keystore     # FCI_KEYSTORE, FCI_KEYSTORE_PASSWORD, FCI_KEY_PASSWORD, FCI_KEY_ALIAS
+    cache:
+      cache_paths:
+        - $CM_BUILD_DIR/.pub-cache
+        - $CM_BUILD_DIR/android/.gradle
+    scripts:
+      - name: Gerar arquivo .env
+        script: |
+          echo "SUPABASE_URL=$SUPABASE_URL" > .env
+          echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> .env
+          echo "MAPBOX_PUBLIC_TOKEN=$MAPBOX_TOKEN" >> .env
+          echo "LIVEKIT_URL=$LIVEKIT_URL" >> .env
+          echo "Arquivo .env gerado:"
+          cat .env
+
+      - name: Configurar Keystore Android
+        script: |
+          echo $FCI_KEYSTORE | base64 --decode > $CM_BUILD_DIR/android/app/keystore.jks
+
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+
+      - name: Build APK
+        script: |
+          flutter build apk --release \
+            --build-name=1.0.0 \
+            --build-number=$(($(date +%s)))
+
+      - name: Build App Bundle
+        script: |
+          flutter build appbundle --release \
+            --build-name=1.0.0 \
+            --build-number=$(($(date +%s)))
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+      - build/app/outputs/bundle/release/*.aab
+    publishing:
+      email:
+        recipients:
+          - seu-email@exemplo.com
+      # Descomente quando quiser enviar pra Play Store:
+      # google_play:
+      #   credentials: $GOOGLE_PLAY_CREDENTIALS
+      #   track: internal
+
+  # --------------------------------------------------------------------------
+  # BUILD iOS
+  # --------------------------------------------------------------------------
+  ios-build:
+    name: Build iOS
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: latest
+      groups:
+        - colow_env          # SUPABASE_URL, SUPABASE_ANON_KEY, MAPBOX_TOKEN, LIVEKIT_URL
+        - colow_ios_certs    # FCI_CERTIFICATE, FCI_CERTIFICATE_PASSWORD, FCI_PROVISIONING_PROFILE
+    cache:
+      cache_paths:
+        - $CM_BUILD_DIR/.pub-cache
+    scripts:
+      - name: Gerar arquivo .env
+        script: |
+          echo "SUPABASE_URL=$SUPABASE_URL" > .env
+          echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> .env
+          echo "MAPBOX_PUBLIC_TOKEN=$MAPBOX_TOKEN" >> .env
+          echo "LIVEKIT_URL=$LIVEKIT_URL" >> .env
+          echo "Arquivo .env gerado:"
+          cat .env
+
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+
+      - name: Instalar pods
+        script: |
+          find . -name "Podfile" -execdir pod install \;
+
+      - name: Build iOS
+        script: |
+          flutter build ios --release --no-codesign \
+            --build-name=1.0.0 \
+            --build-number=$(($(date +%s)))
+    artifacts:
+      - build/ios_archive/*.ipa
+    publishing:
+      email:
+        recipients:
+          - seu-email@exemplo.com
+      # Descomente quando quiser enviar pra App Store:
+      # app_store_connect:
+      #   api_key: $APP_STORE_CONNECT_API_KEY
+      #   key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+      #   issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+      #   submit_to_testflight: true
