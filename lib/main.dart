@@ -30,6 +30,11 @@ void main() async {
     await Supabase.initialize(
       url: Env.supabaseUrl,
       anonKey: Env.supabaseAnonKey,
+      // PKCE e o fluxo OAuth correto para mobile. O Supabase SDK captura
+      // automaticamente o deep link colow://login-callback e cria a sessao.
+      authOptions: FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
+      ),
     );
   } catch (e) {
     debugPrint('[COLOW] Erro ao inicializar Supabase: $e');

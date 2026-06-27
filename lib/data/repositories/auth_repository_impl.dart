@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/errors/failures.dart';
@@ -29,14 +31,18 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<Profile>> signInWithGoogle() async {
     try {
-      // No mobile, o Supabase abre o navegador/in-app e retorna a sessao.
-      // O redirect fica a cargo do supabase_flutter + deep link config.
-      final response = await _remote.signInWithGoogle('colow://login-callback');
+      final authCompleter = Completer<User>();
 
-      final user = _remote.currentSession?.user;
-      if (user == null) {
-        return const Error(AuthFailure('Login nao completado'));
-      }
+      final subscription = _remote.authStateChanges.listen((data) {
+        if (data.session?.user != null && !authCompleter.isCompleted) {
+          authCompleter.complete(data.session!.user);
+        }
+      });
+
+      await _remote.signInWithGoogle('colow://login-callback');
+
+      final user = await authCompleter.future.timeout(const Duration(seconds: 60));
+      await subscription.cancel();
 
       final profile = await _ensureProfileForUser(user);
       await _local.saveProfile(ProfileModel.fromEntity(profile));
@@ -44,6 +50,39 @@ class AuthRepositoryImpl implements AuthRepository {
       return Success(profile);
     } catch (e) {
       return Error(AuthFailure('Erro no login: $e'));
+    }
+  }
+
+  @override
+  Future<Result<Profile>> signInWithEmail(String email, String password) async {
+    try {
+      final user = await _remote.signInWithEmail(email, password);
+      final profile = await _ensureProfileForUser(user);
+      await _local.saveProfile(ProfileModel.fromEntity(profile));
+      return Success(profile);
+    } catch (e) {
+      return Error(AuthFailure('Email ou senha incorretos'));
+    }
+  }
+
+  @override
+  Future<Result<Profile>> signUpWithEmail(String email, String password, String nome) async {
+    try {
+      final user = await _remote.signUpWithEmail(email, password);
+      final existing = await _remote.getProfileByUserId(user.id);
+      if (existing != null) {
+        await _local.saveProfile(existing);
+        return Success(existing);
+      }
+      final profile = await _remote.createProfile(
+        deviceId: user.id,
+        nome: nome.trim().isEmpty ? email.split('@').first : nome.trim(),
+        userId: user.id,
+      );
+      await _local.saveProfile(ProfileModel.fromEntity(profile));
+      return Success(profile);
+    } catch (e) {
+      return Error(AuthFailure('Erro ao criar conta: $e'));
     }
   }
 
