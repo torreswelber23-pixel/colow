@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "917925337801",
+    "project_id": "colow-app",
+    "storage_bucket": "colow-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:917925337801:android:82e957260d275d9e6a4b18",
+        "android_client_info": {
+          "package_name": "colow.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAA4_cM7DC4-tFzkQ9sfRO1uK6c27GoiRo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
