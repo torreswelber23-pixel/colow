@@ -13,6 +13,7 @@ import '../../../domain/entities/profile.dart';
 import '../../../domain/repositories/alert_repository.dart';
 import '../../../domain/repositories/contacts_repository.dart';
 import '../../../domain/repositories/profile_repository.dart';
+import '../../../services/guard_foreground.dart';
 import '../../../services/livekit_service.dart';
 import '../../../services/location_service.dart';
 import '../../../services/messaging_service.dart';
@@ -78,6 +79,10 @@ class RouteCubit extends Cubit<RouteState> {
       );
     }
 
+    // Servico em primeiro plano (disfarcado) — mantem voz/localizacao vivos
+    // com a tela apagada / app em segundo plano.
+    await GuardForeground.start();
+
     _startLocationUpdates(profile);
     await _startVoiceRecognition();
   }
@@ -90,6 +95,9 @@ class RouteCubit extends Cubit<RouteState> {
         onWordDetected: () async {
           if (!state.isSendingSos && !state.sosSent) {
             await sendSos();
+            // Libera o microfone do Vosk antes de transmitir pelo LiveKit
+            // (evita conflito de quem controla o mic).
+            await _voiceService.stopListening();
             if (state.audioStatus != AudioStatus.live) {
               await toggleFamilyListening();
             }
@@ -167,6 +175,7 @@ class RouteCubit extends Cubit<RouteState> {
     // Desconecta o áudio e voz ao encerrar a rota
     await _voiceService.stopListening();
     await _disconnectAudio();
+    await GuardForeground.stop();
     emit(state.copyWith(status: RouteStatus.finished));
   }
 
@@ -290,6 +299,7 @@ class RouteCubit extends Cubit<RouteState> {
     _audioStateSub?.cancel();
     _liveKitService.disconnect();
     _voiceService.stopListening();
+    GuardForeground.stop();
     return super.close();
   }
 }

@@ -5,28 +5,48 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../config/app_colors.dart';
 import '../bloc/config/config_cubit.dart';
-import '../bloc/contacts/contacts_cubit.dart';
 import '../bloc/home/home_cubit.dart';
-import '../bloc/profile/profile_cubit.dart';
 import '../widgets/gradient_button.dart';
+import 'acompanhar_page.dart';
 import 'circle_page.dart';
 import 'config_page.dart';
 import 'route_page.dart';
 import '../../injection.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => getIt<HomeCubit>()..loadHome(),
+      child: const _HomeView(),
+    );
+  }
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomeView extends StatefulWidget {
+  const _HomeView();
+
   @override
-  void initState() {
-    super.initState();
-    context.read<HomeCubit>().loadHome();
+  State<_HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<_HomeView> {
+  Future<void> _openConfig(BuildContext context) async {
+    final homeCubit = context.read<HomeCubit>();
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => getIt<ConfigCubit>()..loadConfig(),
+          child: const ConfigPage(),
+        ),
+      ),
+    );
+    // Recarrega o status (palavra-codigo, contatos) ao voltar.
+    await homeCubit.loadHome();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +75,26 @@ class _HomePageState extends State<HomePage> {
                     icon: Icons.shield,
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const RoutePage()),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const AcompanharPage()),
+                      ),
+                      icon: const Icon(Icons.podcasts, color: AppColors.primary),
+                      label: const Text(
+                        'Acompanhar ao vivo',
+                        style: TextStyle(
+                            color: AppColors.primary, fontWeight: FontWeight.w700),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.primary),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -88,28 +128,13 @@ class _HomePageState extends State<HomePage> {
                 icon: Icons.people,
                 label: 'Circulo',
                 onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => MultiBlocProvider(
-                      providers: [
-                        BlocProvider(create: (_) => getIt<ContactsCubit>()),
-                        BlocProvider(create: (_) => getIt<ProfileCubit>()),
-                      ],
-                      child: const CirclePage(),
-                    ),
-                  ),
+                  MaterialPageRoute(builder: (_) => const CirclePage()),
                 ),
               ),
               _NavItem(
                 icon: Icons.settings,
                 label: 'Config',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => BlocProvider(
-                      create: (_) => getIt<ConfigCubit>()..loadConfig(),
-                      child: const ConfigPage(),
-                    ),
-                  ),
-                ),
+                onTap: () => _openConfig(context),
               ),
             ],
           ),
@@ -206,14 +231,7 @@ class _HomePageState extends State<HomePage> {
           child: _QuickAction(
             icon: Icons.key,
             label: 'Palavra-codigo',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => BlocProvider(
-                  create: (_) => getIt<ConfigCubit>()..loadConfig(),
-                  child: const ConfigPage(),
-                ),
-              ),
-            ),
+            onTap: () => _openConfig(context),
           ),
         ),
         const SizedBox(width: 12),
@@ -235,7 +253,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildStatusCard(HomeState state) {
     final hasContacts = state.contacts.isNotEmpty;
-    final hasCodeWord = false; // TODO: carregar do storage
+    final hasCodeWord = state.hasCodeWord;
 
     return Container(
       padding: const EdgeInsets.all(18),

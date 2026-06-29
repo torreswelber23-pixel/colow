@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -12,6 +13,9 @@ import 'services/push_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Porta de comunicacao do servico em primeiro plano (disfarcado).
+  FlutterForegroundTask.initCommunicationPort();
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

@@ -20,6 +20,7 @@ import 'presentation/bloc/onboarding/onboarding_cubit.dart';
 import 'presentation/bloc/profile/profile_cubit.dart';
 import 'presentation/bloc/route/route_cubit.dart';
 import 'presentation/bloc/tracking/tracking_cubit.dart';
+import 'services/family_alert_service.dart';
 import 'services/livekit_service.dart';
 import 'domain/entities/profile.dart';
 import 'services/location_service.dart';
@@ -43,6 +44,9 @@ Future<void> initDependencies() async {
   getIt.registerSingleton<LocationService>(LocationService());
   getIt.registerSingleton<MessagingService>(MessagingService());
   getIt.registerSingleton<PushService>(PushService());
+  getIt.registerSingleton<FamilyAlertService>(
+    FamilyAlertService(getIt(), getIt()),
+  );
   getIt.registerSingleton<LiveKitService>(LiveKitService());
   getIt.registerSingleton<VoiceService>(VoiceService());
 
@@ -61,14 +65,14 @@ Future<void> initDependencies() async {
   );
 
   // Cubits
-  getIt.registerFactory(() => AuthCubit(getIt(), getIt()));
+  getIt.registerFactory(() => AuthCubit(getIt(), getIt(), getIt(), getIt()));
   getIt.registerFactory(() => OnboardingCubit(getIt()));
   getIt.registerFactory(() => ProfileCubit(getIt(), getIt()));
   getIt.registerFactory(() => ContactsCubit(getIt()));
   getIt.registerFactory(() => ConfigCubit(getIt()));
-  getIt.registerFactory(() => HomeCubit(getIt(), getIt()));
+  getIt.registerFactory(() => HomeCubit(getIt(), getIt(), getIt()));
   getIt.registerFactory(() => RouteCubit(getIt(), getIt(), getIt(), getIt(), getIt(), getIt(), getIt(), getIt()));
-  getIt.registerFactory(() => EmergencyCubit(getIt(), getIt(), getIt(), getIt()));
+  getIt.registerFactory(() => EmergencyCubit(getIt(), getIt(), getIt(), getIt(), getIt()));
   getIt.registerFactoryParam<TrackingCubit, Profile, void>(
     (alvo, _) => TrackingCubit(getIt(), getIt(), getIt(), alvo),
   );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'config/app_theme.dart';
+import 'core/navigation.dart';
 import 'injection.dart';
 import 'presentation/bloc/auth/auth_cubit.dart';
 import 'presentation/bloc/onboarding/onboarding_cubit.dart';
@@ -20,6 +21,7 @@ class ColowApp extends StatelessWidget {
       child: MaterialApp(
         title: 'COLOW',
         debugShowCheckedModeBanner: false,
+        navigatorKey: rootNavigatorKey,
         theme: AppTheme.light,
         home: const SplashPage(),
       ),

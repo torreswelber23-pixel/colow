@@ -26,6 +26,16 @@ class AlertRepositoryImpl implements AlertRepository {
         mensagem: message,
         protegidoId: protegidoId,
       );
+      // Alerta em tempo real para a familia (independe do FCM).
+      if (protegidoId != null) {
+        await _remote.insertFamilyAlerts(
+          protegidoId: protegidoId,
+          nome: nome,
+          lat: location.lat,
+          lng: location.lng,
+          tipo: 'sos',
+        );
+      }
       return Success(data);
     } catch (e) {
       return Error(ServerFailure('Erro ao enviar SOS: $e'));
@@ -66,6 +76,13 @@ class AlertRepositoryImpl implements AlertRepository {
         nome: nome,
         mensagem: 'Ativou a escuta ao vivo',
         protegidoId: protegidoId,
+        tipo: 'escuta',
+      );
+      await _remote.insertFamilyAlerts(
+        protegidoId: protegidoId,
+        nome: nome,
+        lat: location?.lat ?? 0,
+        lng: location?.lng ?? 0,
         tipo: 'escuta',
       );
       return Success(data);

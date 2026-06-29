@@ -64,6 +64,18 @@
 	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Deep links: colow:// — OAuth Google callback + SOS + presença -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>colow</string>
+			</array>
+		</dict>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

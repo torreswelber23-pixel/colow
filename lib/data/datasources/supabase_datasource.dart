@@ -19,6 +19,26 @@ class SupabaseDatasource {
     );
   }
 
+  Future<User> signInWithEmail(String email, String password) async {
+    final response = await _client.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
+    final user = response.user;
+    if (user == null) throw Exception('Login falhou');
+    return user;
+  }
+
+  Future<User> signUpWithEmail(String email, String password) async {
+    final response = await _client.auth.signUp(
+      email: email,
+      password: password,
+    );
+    final user = response.user;
+    if (user == null) throw Exception('Cadastro falhou');
+    return user;
+  }
+
   Future<void> signOut() async {
     await _client.auth.signOut();
   }
@@ -190,6 +210,151 @@ class SupabaseDatasource {
       throw Exception('Token LiveKit não retornado pela Edge Function');
     }
     return token;
+  }
+
+  // ===== Alertas em tempo real (Realtime, sem depender de FCM) =====
+
+  /// Insere uma linha de alerta para cada familiar (acompanhante) vinculado
+  /// ao [protegidoId]. O app da familia recebe via Realtime instantaneamente.
+  /// Retorna quantos familiares foram notificados.
+  Future<int> insertFamilyAlerts({
+    required String protegidoId,
+    required String nome,
+    required double lat,
+    required double lng,
+    String tipo = 'sos',
+    String? room,
+  }) async {
+    final vinc = await _client
+        .from('vinculos')
+        .select('acompanhante_id')
+        .eq('protegido_id', protegidoId);
+
+    final rows = (vinc as List)
+        .map((v) => {
+              'protegido_id': protegidoId,
+              'acompanhante_id': v['acompanhante_id'],
+              'nome': nome,
+              'lat': lat,
+              'lng': lng,
+              'tipo': tipo,
+              'room': room ?? 'colow-$protegidoId',
+            })
+        .toList();
+
+    if (rows.isEmpty) return 0;
+    await _client.from('alertas_familia').insert(rows);
+    return rows.length;
+  }
+
+  /// Marca um alerta como recebido (sinal de diagnostico + "visto").
+  Future<void> markAlertReceived(String alertId) async {
+    await _client
+        .from('alertas_familia')
+        .update({'status': 'recebido'}).eq('id', alertId);
+  }
+
+  /// Grava um marcador de diagnostico (aparece no banco para eu inspecionar).
+  Future<void> debugMarker(String profileId, String nota) async {
+    try {
+      await _client.from('alertas_familia').insert({
+        'protegido_id': profileId,
+        'acompanhante_id': profileId,
+        'nome': nota,
+        'lat': 0,
+        'lng': 0,
+        'tipo': 'debug',
+        'status': nota,
+      });
+    } catch (e) {
+      // ignora
+    }
+  }
+
+  /// Assina o Realtime da localizacao de [perfilId] (estilo Uber). Chama
+  /// [onLocation] com lat/lng sempre que a posicao da pessoa atualiza.
+  RealtimeChannel subscribeLocation(
+    String perfilId,
+    void Function(double lat, double lng) onLocation,
+  ) {
+    final token = _client.auth.currentSession?.accessToken;
+    if (token != null) {
+      _client.realtime.setAuth(token);
+    }
+
+    final channel = _client.channel('loc_$perfilId');
+    void handle(Map<String, dynamic> row) {
+      final lat = (row['lat'] as num?)?.toDouble();
+      final lng = (row['lng'] as num?)?.toDouble();
+      if (lat != null && lng != null) onLocation(lat, lng);
+    }
+
+    channel.onPostgresChanges(
+      event: PostgresChangeEvent.insert,
+      schema: 'public',
+      table: 'localizacoes',
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'perfil_id',
+        value: perfilId,
+      ),
+      callback: (payload) => handle(payload.newRecord),
+    );
+    channel.onPostgresChanges(
+      event: PostgresChangeEvent.update,
+      schema: 'public',
+      table: 'localizacoes',
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'perfil_id',
+        value: perfilId,
+      ),
+      callback: (payload) => handle(payload.newRecord),
+    );
+    channel.subscribe();
+    return channel;
+  }
+
+  /// Le a ultima localizacao conhecida de [perfilId] (para o primeiro frame).
+  Future<Map<String, dynamic>?> getLastLocation(String perfilId) async {
+    final r = await _client
+        .from('localizacoes')
+        .select('lat, lng')
+        .eq('perfil_id', perfilId)
+        .maybeSingle();
+    return r;
+  }
+
+  /// Assina o canal Realtime de alertas destinados a [acompanhanteId].
+  /// Chama [onAlert] com os dados da linha sempre que um alerta novo chega.
+  RealtimeChannel subscribeFamilyAlerts(
+    String acompanhanteId,
+    void Function(Map<String, dynamic> alerta) onAlert,
+  ) {
+    // Essencial: aplica o token do usuario no Realtime, senao a RLS bloqueia
+    // a entrega dos eventos (o canal conecta mas nunca recebe nada).
+    final token = _client.auth.currentSession?.accessToken;
+    if (token != null) {
+      _client.realtime.setAuth(token);
+    }
+
+    final channel = _client.channel('alertas_familia_$acompanhanteId');
+    channel.onPostgresChanges(
+      event: PostgresChangeEvent.insert,
+      schema: 'public',
+      table: 'alertas_familia',
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'acompanhante_id',
+        value: acompanhanteId,
+      ),
+      callback: (payload) => onAlert(payload.newRecord),
+    );
+    channel.subscribe((status, error) {
+      // Grava o status da assinatura no banco para diagnostico.
+      debugMarker(acompanhanteId, 'sub_${status.name}${error != null ? '_err' : ''}');
+    });
+    return channel;
   }
 
   String _gerarCodigo() {

@@ -17,11 +17,12 @@ class AuthState extends Equatable {
     AuthStatus? status,
     Profile? profile,
     String? errorMessage,
+    bool clearError = false,
   }) {
     return AuthState(
       status: status ?? this.status,
       profile: profile ?? this.profile,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 

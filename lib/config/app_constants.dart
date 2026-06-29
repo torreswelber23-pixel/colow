@@ -18,6 +18,6 @@ class AppConstants {
   static const String presenceDeepLink = 'colow://presenca';
 
   // Notificacoes
-  static const String emergencyChannelId = 'colow-emergencia';
+  static const String emergencyChannelId = 'colow-emergencia-alarme';
   static const String protectionChannelId = 'colow-protecao';
 }

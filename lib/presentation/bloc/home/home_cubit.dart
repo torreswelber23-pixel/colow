@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../../core/utils/result.dart';
+import '../../../data/datasources/local_storage_datasource.dart';
 import '../../../domain/entities/app_location.dart';
 import '../../../domain/entities/contact.dart';
 import '../../../domain/entities/profile.dart';
@@ -14,8 +15,9 @@ part 'home_state.dart';
 class HomeCubit extends Cubit<HomeState> {
   final ContactsRepository _contactsRepository;
   final ProfileRepository _profileRepository;
+  final LocalStorageDatasource _storage;
 
-  HomeCubit(this._contactsRepository, this._profileRepository)
+  HomeCubit(this._contactsRepository, this._profileRepository, this._storage)
       : super(const HomeState());
 
   Future<void> loadHome() async {
@@ -34,6 +36,7 @@ class HomeCubit extends Cubit<HomeState> {
       Error() => null,
     };
 
+    final codeWord = await _storage.getCodeWord();
     final location = await _getLocation();
 
     emit(state.copyWith(
@@ -41,6 +44,7 @@ class HomeCubit extends Cubit<HomeState> {
       contacts: contacts,
       profile: profile,
       location: location,
+      hasCodeWord: codeWord != null && codeWord.isNotEmpty,
     ));
   }
 

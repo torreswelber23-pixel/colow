@@ -1,5 +1,7 @@
 plugins {
     id("com.android.application")
+    // Firebase: aplica o processamento do google-services.json
+    id("com.google.gms.google-services")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -16,11 +18,12 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "app.colow.colow_flutter"
+        // Application ID alinhado ao google-services.json (pacote registrado
+        // no Firebase: colow.app). Necessario para o FCM/getToken funcionar.
+        applicationId = "colow.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = maxOf(flutter.minSdkVersion, 23)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

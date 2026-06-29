@@ -7,6 +7,7 @@ class HomeState extends Equatable {
   final Profile? profile;
   final List<Contact> contacts;
   final AppLocation? location;
+  final bool hasCodeWord;
   final String? errorMessage;
 
   const HomeState({
@@ -14,6 +15,7 @@ class HomeState extends Equatable {
     this.profile,
     this.contacts = const [],
     this.location,
+    this.hasCodeWord = false,
     this.errorMessage,
   });
 
@@ -22,6 +24,7 @@ class HomeState extends Equatable {
     Profile? profile,
     List<Contact>? contacts,
     AppLocation? location,
+    bool? hasCodeWord,
     String? errorMessage,
   }) {
     return HomeState(
@@ -29,10 +32,11 @@ class HomeState extends Equatable {
       profile: profile ?? this.profile,
       contacts: contacts ?? this.contacts,
       location: location ?? this.location,
+      hasCodeWord: hasCodeWord ?? this.hasCodeWord,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 
   @override
-  List<Object?> get props => [status, profile, contacts, location, errorMessage];
+  List<Object?> get props => [status, profile, contacts, location, hasCodeWord, errorMessage];
 }

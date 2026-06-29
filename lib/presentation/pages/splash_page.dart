@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../injection.dart';
+import '../../services/push_service.dart';
 import '../bloc/auth/auth_cubit.dart';
 import '../bloc/onboarding/onboarding_cubit.dart';
 import 'home_page.dart';
@@ -51,6 +53,11 @@ class _SplashPageState extends State<SplashPage> {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const HomePage()),
         );
+        // Se o app foi aberto por uma notificacao de SOS (tela bloqueada /
+        // app fechado), abre a tela de alerta por cima da Home.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          getIt<PushService>().tratarAberturaPorNotificacao();
+        });
       } else {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const LoginPage()),

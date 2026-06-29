@@ -17,8 +17,10 @@ class _ConfigPageState extends State<ConfigPage> {
   @override
   void initState() {
     super.initState();
+    // Pre-preenche se ja estiver carregada; senao, o BlocListener abaixo
+    // preenche quando o loadConfig() assincrono terminar.
     final word = context.read<ConfigCubit>().state.codeWord;
-    if (word != null) {
+    if (word != null && word.isNotEmpty) {
       _codeWordController.text = word;
     }
   }
@@ -60,10 +62,22 @@ class _ConfigPageState extends State<ConfigPage> {
               ),
             ),
             const SizedBox(height: 20),
-            TextField(
-              controller: _codeWordController,
-              decoration: const InputDecoration(
-                hintText: 'Ex: "passa na casa da tia Cleide"',
+            BlocListener<ConfigCubit, ConfigState>(
+              listenWhen: (prev, curr) => prev.codeWord != curr.codeWord,
+              listener: (context, state) {
+                final word = state.codeWord;
+                // So sobrescreve se o usuario ainda nao digitou nada.
+                if (word != null &&
+                    word.isNotEmpty &&
+                    _codeWordController.text.isEmpty) {
+                  _codeWordController.text = word;
+                }
+              },
+              child: TextField(
+                controller: _codeWordController,
+                decoration: const InputDecoration(
+                  hintText: 'Ex: "passa na casa da tia Cleide"',
+                ),
               ),
             ),
             const SizedBox(height: 12),

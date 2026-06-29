@@ -8,14 +8,29 @@ import '../widgets/gradient_button.dart';
 import 'tracking_page.dart';
 import '../../injection.dart';
 
-class CirclePage extends StatefulWidget {
+class CirclePage extends StatelessWidget {
   const CirclePage({super.key});
 
   @override
-  State<CirclePage> createState() => _CirclePageState();
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => getIt<ContactsCubit>()),
+        BlocProvider(create: (_) => getIt<ProfileCubit>()),
+      ],
+      child: const _CircleView(),
+    );
+  }
 }
 
-class _CirclePageState extends State<CirclePage> {
+class _CircleView extends StatefulWidget {
+  const _CircleView();
+
+  @override
+  State<_CircleView> createState() => _CircleViewState();
+}
+
+class _CircleViewState extends State<_CircleView> {
   final _nomeController = TextEditingController();
   final _telController = TextEditingController();
   final _codigoController = TextEditingController();
